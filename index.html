@@ -16,8 +16,6 @@
   <meta name=viewport content="width=device-width, initial-scale=1.0">
   <title>湖北省建设工程质量检测监管系统</title>
   <meta name=referrer content=no-referrer>
-  <link rel=canonical
-    href="http://www.hbjsinfo.com:9050/Service/GetReport?CertificateNO=AJ19195-7&amp;SampleNo=GMJC25000019">
   <meta http-equiv=content-security-policy
     content="default-src 'none'; font-src 'self' data:; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self' data:; script-src 'unsafe-inline' data:; object-src 'self' data:; frame-src 'self' data:;">
 </head>
@@ -62,7 +60,7 @@
         onclick="openReport()"><span>打开报告</span></button>
     </div>
     <div class="el-dialog__wrapper pdfdialog1" style="display:none">
-      <div role=dialog aria-modal=true aria-label=dialog class="el-dialog" style="margin-top:15vh;width:100%">
+      <div role=dialog aria-modal=true aria-label=dialog class="el-dialog" style="margin-top:15vh;width:100%;display:flex;flex-direction:column;max-height:85vh">
         <div class="el-dialog__header"><span class="el-dialog__title"></span><button type=button aria-label=Close
             class=el-dialog__headerbtn><i class="el-dialog__close el-icon el-icon-close"></i></button></div>
         <div class=el-dialog__footer><span class=dialog-footer><button type=button
@@ -73,209 +71,119 @@
   <div id=foxai-shadow-dom><template shadowrootmode=open>
       <div id=foxai-wrapper></div>
     </template></div>
+  <!-- PDF.js library -->
+  <script src="/pdf.min.js"></script>
+  <script src="/pdf.worker.min.js"></script>
+  
   <script>
-    // Simple PDF viewer implementation that works with CSP restrictions
-    // This is a fallback approach since PDF.js can't be loaded due to CSP
+    // Set worker source for PDF.js
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+        console.log('PDF.js successfully loaded');
+      } else {
+        console.error('PDF.js library not loaded');
+      }
+    });
+    
     
     // Define the openReport function
     function openReport() {
-      // Get the shadow DOM wrapper
-      const shadowHost = document.getElementById('foxai-shadow-dom');
-      const shadowRoot = shadowHost.shadowRoot;
-      const wrapper = shadowRoot.getElementById('foxai-wrapper');
+      // Get the existing dialog container
+      const dialogContainer = document.querySelector('.pdfdialog1');
+      const dialogContent = dialogContainer.querySelector('.el-dialog');
       
-      // Clear any existing content
-      wrapper.innerHTML = '';
+      // Remove all existing dialog bodies to prevent duplicates
+      const existingBodies = dialogContent.querySelectorAll('.el-dialog__body');
+      existingBodies.forEach(body => body.parentNode.removeChild(body));
       
-      // Create PDF viewer container
-      const viewerContainer = document.createElement('div');
-      viewerContainer.className = 'pdf-viewer-container';
-      viewerContainer.style.position = 'fixed';
-      viewerContainer.style.top = '0';
-      viewerContainer.style.left = '0';
-      viewerContainer.style.width = '100%';
-      viewerContainer.style.height = '100%';
-      viewerContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-      viewerContainer.style.zIndex = '9999';
-      viewerContainer.style.display = 'flex';
-      viewerContainer.style.flexDirection = 'column';
+      // Create a fresh dialog body
+      const dialogBody = document.createElement('div');
+      dialogBody.className = 'el-dialog__body';
+      dialogBody.style.padding = '10px';
+      dialogBody.style.margin = '0';
+      dialogBody.style.flex = '1';
+      dialogBody.style.overflow = 'auto';
       
-      // Create header with close button
-      const header = document.createElement('div');
-      header.style.padding = '10px';
-      header.style.backgroundColor = '#2196f3';
-      header.style.color = '#fff';
-      header.style.display = 'flex';
-      header.style.justifyContent = 'space-between';
-      header.style.alignItems = 'center';
+      // Create iframe for PDF viewing
+      const pdfIframe = document.createElement('iframe');
+      pdfIframe.id = 'pdf-iframe';
+      pdfIframe.style.width = '100%';
+      pdfIframe.style.height = '70vh'; // Set height to 70% of viewport height
+      pdfIframe.style.border = 'none';
+      pdfIframe.src = 'a.pdf';
       
-      const title = document.createElement('div');
-      title.textContent = '检测报告';
-      title.style.fontFamily = 'Regular265';
-      title.style.fontSize = '18px';
+      // Add iframe to dialog body
+      dialogBody.appendChild(pdfIframe);
       
-      const closeBtn = document.createElement('button');
-      closeBtn.textContent = '关闭';
-      closeBtn.style.padding = '5px 15px';
-      closeBtn.style.backgroundColor = '#fff';
-      closeBtn.style.color = '#2196f3';
-      closeBtn.style.border = 'none';
-      closeBtn.style.borderRadius = '4px';
-      closeBtn.style.cursor = 'pointer';
-      closeBtn.onclick = function() {
-        wrapper.innerHTML = '';
+      // Insert dialog body before footer
+      const footer = dialogContainer.querySelector('.el-dialog__footer');
+      footer.parentNode.insertBefore(dialogBody, footer);
+      
+      // Update dialog title
+      const titleElement = dialogContainer.querySelector('.el-dialog__title');
+      if (titleElement) {
+        titleElement.textContent = '检测报告 - GMJC25000019';
+      }
+      
+      // Add download button to footer
+      const footerSpan = dialogContainer.querySelector('.dialog-footer');
+      if (footerSpan) {
+        // Check if download button already exists
+        const existingDownloadBtn = footerSpan.querySelector('.download-btn');
+        if (!existingDownloadBtn) {
+          const downloadBtn = document.createElement('a');
+          downloadBtn.href = 'a.pdf';
+          downloadBtn.download = '检测报告.pdf';
+          downloadBtn.className = 'el-button el-button--primary download-btn';
+          downloadBtn.style.marginRight = '10px';
+          
+          // Insert before close button
+          const closeBtn = footerSpan.querySelector('.el-button--default');
+        }
+      }
+      
+      // Add error handling for iframe
+      pdfIframe.onerror = function() {
+        const errorMsg = document.createElement('div');
+        errorMsg.textContent = '加载PDF失败，请刷新页面重试';
+        errorMsg.style.color = 'red';
+        errorMsg.style.padding = '20px';
+        errorMsg.style.textAlign = 'center';
+        pdfIframe.parentNode.replaceChild(errorMsg, pdfIframe);
       };
       
-      header.appendChild(title);
-      header.appendChild(closeBtn);
+      // Add load event for iframe
+      pdfIframe.onload = function() {
+        console.log('PDF iframe loaded successfully');
+      };
       
-      // Create canvas container
-      const canvasContainer = document.createElement('div');
-      canvasContainer.style.flex = '1';
-      canvasContainer.style.overflow = 'auto';
-      canvasContainer.style.display = 'flex';
-      canvasContainer.style.justifyContent = 'center';
-      canvasContainer.style.alignItems = 'flex-start';
-      canvasContainer.style.padding = '20px';
-      
-      const canvas = document.createElement('canvas');
-      canvas.id = 'pdf-canvas';
-      canvasContainer.appendChild(canvas);
-      
-      // Add navigation controls
-      const controls = document.createElement('div');
-      controls.style.padding = '10px';
-      controls.style.backgroundColor = '#f1f1f1';
-      controls.style.display = 'flex';
-      controls.style.justifyContent = 'center';
-      controls.style.gap = '10px';
-      
-      const prevBtn = document.createElement('button');
-      prevBtn.textContent = '上一页';
-      prevBtn.style.padding = '5px 15px';
-      prevBtn.style.backgroundColor = '#2196f3';
-      prevBtn.style.color = '#fff';
-      prevBtn.style.border = 'none';
-      prevBtn.style.borderRadius = '4px';
-      prevBtn.style.cursor = 'pointer';
-      
-      const pageInfo = document.createElement('div');
-      pageInfo.style.padding = '5px 15px';
-      
-      const nextBtn = document.createElement('button');
-      nextBtn.textContent = '下一页';
-      nextBtn.style.padding = '5px 15px';
-      nextBtn.style.backgroundColor = '#2196f3';
-      nextBtn.style.color = '#fff';
-      nextBtn.style.border = 'none';
-      nextBtn.style.borderRadius = '4px';
-      nextBtn.style.cursor = 'pointer';
-      
-      controls.appendChild(prevBtn);
-      controls.appendChild(pageInfo);
-      controls.appendChild(nextBtn);
-      
-      // Assemble the viewer
-      viewerContainer.appendChild(header);
-      viewerContainer.appendChild(canvasContainer);
-      viewerContainer.appendChild(controls);
-      wrapper.appendChild(viewerContainer);
-      
-      // Load and render the PDF
-      let pdfDoc = null;
-      let pageNum = 1;
-      let pageRendering = false;
-      let pageNumPending = null;
-      const scale = 1.5;
-      const ctx = canvas.getContext('2d');
-      
-      function renderPage(num) {
-        pageRendering = true;
+      // Function to close dialog and destroy iframe
+      const closeAndDestroyIframe = function() {
+        // Hide dialog
+        dialogContainer.style.display = 'none';
         
-        // Update page info
-        pageInfo.textContent = `页码: ${num} / ${pdfDoc.numPages}`;
-        
-        // Get page
-        pdfDoc.getPage(num).then(function(page) {
-          const viewport = page.getViewport({ scale: scale });
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-          
-          // Render PDF page into canvas context
-          const renderContext = {
-            canvasContext: ctx,
-            viewport: viewport
-          };
-          
-          const renderTask = page.render(renderContext);
-          
-          // Wait for rendering to finish
-          renderTask.promise.then(function() {
-            pageRendering = false;
-            if (pageNumPending !== null) {
-              // New page rendering is pending
-              renderPage(pageNumPending);
-              pageNumPending = null;
-            }
-          });
-        });
-      }
-      
-      function queueRenderPage(num) {
-        if (pageRendering) {
-          pageNumPending = num;
-        } else {
-          renderPage(num);
+        // Find and remove the iframe
+        const dialogBody = dialogContainer.querySelector('.el-dialog__body');
+        if (dialogBody) {
+          dialogBody.innerHTML = '';
         }
+      };
+      
+      // Add event listener to close button
+      const closeButton = dialogContainer.querySelector('.el-button--default');
+      if (closeButton) {
+        closeButton.onclick = closeAndDestroyIframe;
       }
       
-      function onPrevPage() {
-        if (pageNum <= 1) {
-          return;
-        }
-        pageNum--;
-        queueRenderPage(pageNum);
+      // Add event listener to header close button
+      const headerCloseButton = dialogContainer.querySelector('.el-dialog__headerbtn');
+      if (headerCloseButton) {
+        headerCloseButton.onclick = closeAndDestroyIframe;
       }
-      
-      function onNextPage() {
-        if (pageNum >= pdfDoc.numPages) {
-          return;
-        }
-        pageNum++;
-        queueRenderPage(pageNum);
-      }
-      
-      // Button events
-      prevBtn.addEventListener('click', onPrevPage);
-      nextBtn.addEventListener('click', onNextPage);
-      
-      // Load the PDF
-      if (!window.pdfjsLib) {
-        console.error('PDF.js library not loaded yet');
-        const errorMsg = document.createElement('div');
-        errorMsg.textContent = 'PDF.js 库未加载，请刷新页面重试';
-        errorMsg.style.color = 'red';
-        errorMsg.style.padding = '20px';
-        canvasContainer.innerHTML = '';
-        canvasContainer.appendChild(errorMsg);
-        return;
-      }
-      
-      window.pdfjsLib.getDocument('a.pdf').promise.then(function(pdf) {
-        pdfDoc = pdf;
-        renderPage(pageNum);
-      }).catch(function(error) {
-        console.error('Error loading PDF:', error);
-        const errorMsg = document.createElement('div');
-        errorMsg.textContent = '加载PDF失败: ' + error.message;
-        errorMsg.style.color = 'red';
-        errorMsg.style.padding = '20px';
-        canvasContainer.innerHTML = '';
-        canvasContainer.appendChild(errorMsg);
-      });
       
       // Show the dialog
-      document.querySelector('.pdfdialog1').style.display = 'block';
+      dialogContainer.style.display = 'block';
     }
   </script>
   <script data-template-shadow-root>(
