@@ -60,15 +60,25 @@
         onclick="openReport()"><span>打开报告</span></button>
     </div>
     <style>
-      .fade-transition {
-        transition: opacity 0.3s ease-in-out;
+      .slide-transition {
+        transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        transform: translateY(-50px);
         opacity: 0;
       }
-      .fade-in {
+      .slide-in {
+        transform: translateY(0);
         opacity: 1;
       }
+      /* Add additional fade effect to enhance the transition */
+      @keyframes fadeEffect {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+      }
+      .fade-effect {
+        animation: fadeEffect 0.3s ease-in-out;
+      }
     </style>
-    <div class="el-dialog__wrapper pdfdialog1 fade-transition" style="display:none">
+    <div class="el-dialog__wrapper pdfdialog1 slide-transition" style="display:none">
       <div role=dialog aria-modal=true aria-label=dialog class="el-dialog" style="margin-top:0;width:100%;height:100vh;display:flex;flex-direction:column">
         <div class="el-dialog__header"><span class="el-dialog__title"></span><button type=button aria-label=Close
             class=el-dialog__headerbtn><i class="el-dialog__close el-icon el-icon-close"></i></button></div>
@@ -102,11 +112,12 @@
       const dialogContainer = document.querySelector('.pdfdialog1');
       const dialogContent = dialogContainer.querySelector('.el-dialog');
       
-      // Show dialog with fade in effect
+      // Show dialog with slide in and fade effect
       dialogContainer.style.display = 'block';
       // Trigger reflow to ensure transition applies
       void dialogContainer.offsetWidth;
-      dialogContainer.classList.add('fade-in');
+      dialogContainer.classList.add('slide-in');
+      dialogContainer.classList.add('fade-effect');
       
       // Remove all existing dialog bodies to prevent duplicates
       const existingBodies = dialogContent.querySelectorAll('.el-dialog__body');
@@ -115,10 +126,10 @@
       // Create a fresh dialog body
       const dialogBody = document.createElement('div');
       dialogBody.className = 'el-dialog__body';
-      dialogBody.style.padding = '10px';
       dialogBody.style.margin = '0';
       dialogBody.style.flex = '1';
       dialogBody.style.overflow = 'auto';
+      dialogBody.style.opacity = '0.95';
       
       // Create iframe for PDF viewing
       const pdfIframe = document.createElement('iframe');
@@ -176,8 +187,8 @@
       
       // Function to close dialog and destroy iframe
       const closeAndDestroyIframe = function() {
-        // Fade out dialog
-        dialogContainer.classList.remove('fade-in');
+        // Slide up dialog
+        dialogContainer.classList.remove('slide-in');
         
         // Wait for animation to complete before hiding
         setTimeout(() => {
