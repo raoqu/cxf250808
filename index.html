@@ -90,21 +90,8 @@
   <div id=foxai-shadow-dom><template shadowrootmode=open>
       <div id=foxai-wrapper></div>
     </template></div>
-  <!-- PDF.js library -->
-  <script src="/pdf.min.js"></script>
-  <script src="/pdf.worker.min.js"></script>
   
   <script>
-    // Set worker source for PDF.js
-    document.addEventListener('DOMContentLoaded', function() {
-      if (window.pdfjsLib) {
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-        console.log('PDF.js successfully loaded');
-      } else {
-        console.error('PDF.js library not loaded');
-      }
-    });
-    
     
     // Define the openReport function
     function openReport() {
@@ -131,14 +118,15 @@
       dialogBody.style.overflow = 'auto';
       dialogBody.style.opacity = '0.95';
       
-      // Create iframe for PDF viewing
+      // Create iframe for PDF viewing using PDF.js viewer
       const pdfIframe = document.createElement('iframe');
       pdfIframe.id = 'pdf-iframe';
       pdfIframe.style.width = '100%';
       pdfIframe.style.height = '100%'; // Fill the entire dialog body
       pdfIframe.style.border = 'none';
-      // Add #pagemode=none to hide thumbnails
-      pdfIframe.src = 'a.pdf#pagemode=none';
+      
+      // Use PDF.js viewer with the PDF URL
+      pdfIframe.src = 'viewer/viewer.html?file=/a.pdf';
       
       // Add iframe to dialog body
       dialogBody.appendChild(pdfIframe);
@@ -164,26 +152,8 @@
           downloadBtn.download = '检测报告.pdf';
           downloadBtn.className = 'el-button el-button--primary download-btn';
           downloadBtn.style.marginRight = '10px';
-          
-          // Insert before close button
-          const closeBtn = footerSpan.querySelector('.el-button--default');
         }
       }
-      
-      // Add error handling for iframe
-      pdfIframe.onerror = function() {
-        const errorMsg = document.createElement('div');
-        errorMsg.textContent = '加载PDF失败，请刷新页面重试';
-        errorMsg.style.color = 'red';
-        errorMsg.style.padding = '20px';
-        errorMsg.style.textAlign = 'center';
-        pdfIframe.parentNode.replaceChild(errorMsg, pdfIframe);
-      };
-      
-      // Add load event for iframe
-      pdfIframe.onload = function() {
-        console.log('PDF iframe loaded successfully');
-      };
       
       // Function to close dialog and destroy iframe
       const closeAndDestroyIframe = function() {
@@ -206,9 +176,6 @@
       closeButtons.forEach(button => {
         button.onclick = closeAndDestroyIframe;
       });
-      
-      // Show the dialog
-      dialogContainer.style.display = 'block';
     }
   </script>
   <script data-template-shadow-root>(
