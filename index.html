@@ -59,8 +59,17 @@
       </div> <button type=button class="el-button el-button--primary" style="margin:15px 0px;width:100%"
         onclick="openReport()"><span>打开报告</span></button>
     </div>
-    <div class="el-dialog__wrapper pdfdialog1" style="display:none">
-      <div role=dialog aria-modal=true aria-label=dialog class="el-dialog" style="margin-top:15vh;width:100%;display:flex;flex-direction:column;max-height:85vh">
+    <style>
+      .fade-transition {
+        transition: opacity 0.3s ease-in-out;
+        opacity: 0;
+      }
+      .fade-in {
+        opacity: 1;
+      }
+    </style>
+    <div class="el-dialog__wrapper pdfdialog1 fade-transition" style="display:none">
+      <div role=dialog aria-modal=true aria-label=dialog class="el-dialog" style="margin-top:0;width:100%;height:100vh;display:flex;flex-direction:column">
         <div class="el-dialog__header"><span class="el-dialog__title"></span><button type=button aria-label=Close
             class=el-dialog__headerbtn><i class="el-dialog__close el-icon el-icon-close"></i></button></div>
         <div class=el-dialog__footer><span class=dialog-footer><button type=button
@@ -93,6 +102,12 @@
       const dialogContainer = document.querySelector('.pdfdialog1');
       const dialogContent = dialogContainer.querySelector('.el-dialog');
       
+      // Show dialog with fade in effect
+      dialogContainer.style.display = 'block';
+      // Trigger reflow to ensure transition applies
+      void dialogContainer.offsetWidth;
+      dialogContainer.classList.add('fade-in');
+      
       // Remove all existing dialog bodies to prevent duplicates
       const existingBodies = dialogContent.querySelectorAll('.el-dialog__body');
       existingBodies.forEach(body => body.parentNode.removeChild(body));
@@ -109,9 +124,10 @@
       const pdfIframe = document.createElement('iframe');
       pdfIframe.id = 'pdf-iframe';
       pdfIframe.style.width = '100%';
-      pdfIframe.style.height = '70vh'; // Set height to 70% of viewport height
+      pdfIframe.style.height = '100%'; // Fill the entire dialog body
       pdfIframe.style.border = 'none';
-      pdfIframe.src = 'a.pdf';
+      // Add #pagemode=none to hide thumbnails
+      pdfIframe.src = 'a.pdf#pagemode=none';
       
       // Add iframe to dialog body
       dialogBody.appendChild(pdfIframe);
@@ -160,27 +176,25 @@
       
       // Function to close dialog and destroy iframe
       const closeAndDestroyIframe = function() {
-        // Hide dialog
-        dialogContainer.style.display = 'none';
+        // Fade out dialog
+        dialogContainer.classList.remove('fade-in');
         
-        // Find and remove the iframe
-        const dialogBody = dialogContainer.querySelector('.el-dialog__body');
-        if (dialogBody) {
-          dialogBody.innerHTML = '';
-        }
+        // Wait for animation to complete before hiding
+        setTimeout(() => {
+          // Hide dialog
+          dialogContainer.style.display = 'none';
+          
+          // Find and remove the iframe
+          const iframe = dialogContainer.querySelector('iframe');
+          if (iframe) iframe.remove();
+        }, 300); // Match the transition duration (0.3s = 300ms)
       };
       
-      // Add event listener to close button
-      const closeButton = dialogContainer.querySelector('.el-button--default');
-      if (closeButton) {
-        closeButton.onclick = closeAndDestroyIframe;
-      }
-      
-      // Add event listener to header close button
-      const headerCloseButton = dialogContainer.querySelector('.el-dialog__headerbtn');
-      if (headerCloseButton) {
-        headerCloseButton.onclick = closeAndDestroyIframe;
-      }
+      // Add event listeners for close buttons
+      const closeButtons = dialogContainer.querySelectorAll('.el-dialog__headerbtn, .el-button--default');
+      closeButtons.forEach(button => {
+        button.onclick = closeAndDestroyIframe;
+      });
       
       // Show the dialog
       dialogContainer.style.display = 'block';
