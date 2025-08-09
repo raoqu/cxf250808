@@ -4,108 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>URL Parser Management</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #555;
-        }
-        input[type="url"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 4px;
-            display: block;
-            width: 100%;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        .result {
-            margin-top: 30px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #f9f9f9;
-            display: none;
-        }
-        .result pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            margin: 0;
-            font-family: monospace;
-        }
-        .error {
-            color: #d9534f;
-            margin-top: 10px;
-            display: none;
-        }
-        .loading {
-            text-align: center;
-            margin-top: 20px;
-            display: none;
-        }
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 2s linear infinite;
-            margin: 0 auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <!-- Include jsQR library for QR code parsing -->`
+    <script src="js/jsQR1.4.min.js"></script>
+    <link rel="stylesheet" href="manage.css">
 </head>
 <body>
     <div class="container">
-        <h1>URL Parser Management</h1>
+        <div class="image-paste-container" id="image-paste-container">
+            <p>点击这里或者粘贴包含二维码的图片</p>
+            <p><small>二维码将被解析并自动填充URL</small></p>
+            <img id="image-preview" class="image-preview" alt="Image preview">
+            <div id="qr-result" class="qr-result"></div>
+        </div>
         
         <div class="form-group">
-            <label for="url-input">Enter URL to Parse:</label>
+            <label for="url-input">输入URL:</label>
             <input type="url" id="url-input" placeholder="https://example.com" required>
         </div>
         
-        <button id="submit-btn">Parse URL</button>
+        <button id="submit-btn">解析URL</button>
         
         <div class="loading" id="loading">
             <div class="loading-spinner"></div>
@@ -114,9 +31,38 @@
         
         <div class="error" id="error-message"></div>
         
+        <div class="param-card" id="param-card">
+            <h3>参数解析</h3>
+            <div class="param-form">
+                <div class="form-group">
+                    <label for="certificate-no">Certificate NO:</label>
+                    <div id="certificate-no" class="param-value"></div>
+                </div>
+                <div class="form-group">
+                    <label for="sample-no">Sample NO:</label>
+                    <div id="sample-no" class="param-value"></div>
+                </div>
+                <div class="form-group" style="grid-column: 1 / span 2">
+                    <label for="file-url">PDF URL:</label>
+                    <div id="file-url-container" class="param-value">
+                        <a id="file-url" href="#" target="_blank"></a>
+                    </div>
+                </div>
+            </div>
+            <div class="param-actions">
+                <button id="clear-params-btn" class="secondary-btn">Clear</button>
+                <button id="copy-params-btn">Copy Values</button>
+            </div>
+        </div>
+        
         <div class="result" id="result-container">
-            <h3>Result:</h3>
-            <pre id="result-content"></pre>
+            <div class="result-header" id="result-header">
+                <h3>API 返回结果</h3>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="result-content">
+                <pre id="result-content"></pre>
+            </div>
         </div>
     </div>
 
@@ -128,19 +74,153 @@
             const errorMessage = document.getElementById('error-message');
             const resultContainer = document.getElementById('result-container');
             const resultContent = document.getElementById('result-content');
+            const imagePasteContainer = document.getElementById('image-paste-container');
+            const imagePreview = document.getElementById('image-preview');
+            const qrResult = document.getElementById('qr-result');
+            const certificateNoInput = document.getElementById('certificate-no');
+            const sampleNoInput = document.getElementById('sample-no');
+            const clearParamsBtn = document.getElementById('clear-params-btn');
+            const copyParamsBtn = document.getElementById('copy-params-btn');
             
-            submitBtn.addEventListener('click', function() {
-                const url = urlInput.value.trim();
+            // Image paste functionality
+            imagePasteContainer.addEventListener('click', function() {
+                // Create a hidden file input and trigger it
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                fileInput.style.display = 'none';
+                document.body.appendChild(fileInput);
                 
-                if (!url) {
-                    showError('Please enter a valid URL');
+                fileInput.click();
+                
+                fileInput.addEventListener('change', function() {
+                    if (fileInput.files && fileInput.files[0]) {
+                        handleImageFile(fileInput.files[0]);
+                    }
+                    document.body.removeChild(fileInput);
+                });
+            });
+            
+            // Handle paste events anywhere in the document
+            document.addEventListener('paste', function(e) {
+                if (e.clipboardData && e.clipboardData.items) {
+                    const items = e.clipboardData.items;
+                    
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i].type.indexOf('image') !== -1) {
+                            const blob = items[i].getAsFile();
+                            handleImageFile(blob);
+                            break;
+                        }
+                    }
+                }
+            });
+            
+            // Handle drag and drop
+            imagePasteContainer.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                imagePasteContainer.classList.add('active');
+            });
+            
+            imagePasteContainer.addEventListener('dragleave', function() {
+                imagePasteContainer.classList.remove('active');
+            });
+            
+            imagePasteContainer.addEventListener('drop', function(e) {
+                e.preventDefault();
+                imagePasteContainer.classList.remove('active');
+                
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    handleImageFile(e.dataTransfer.files[0]);
+                }
+            });
+            
+            // Process the image file and look for QR code
+            function handleImageFile(file) {
+                // Show the image preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    
+                    // Create an image element to use for QR code detection
+                    const img = new Image();
+                    img.onload = function() {
+                        // Create canvas to draw the image for QR code processing
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // Get image data for QR code processing
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        
+                        // Process with jsQR
+                        try {
+                            const code = jsQR(imageData.data, imageData.width, imageData.height);
+                            
+                            if (code) {
+                                // QR code found
+                                qrResult.textContent = `检测到二维码: ${code.data}`;
+                                qrResult.style.display = 'block';
+                                
+                                // Fill the URL input if it looks like a URL
+                                if (isValidURL(code.data)) {
+                                    urlInput.value = code.data;
+                                    qrResult.innerHTML = `有效的二维码`;
+                                } else {
+                                    qrResult.innerHTML = `<span style="color:red">无效的二维码</span>`;
+                                }
+                            } else {
+                                // No QR code found
+                                qrResult.textContent = 'No QR code detected in the image.';
+                                qrResult.style.display = 'block';
+                            }
+                        } catch (error) {
+                            console.error('Error processing QR code:', error);
+                            qrResult.textContent = 'Error processing image for QR code.';
+                            qrResult.style.display = 'block';
+                        }
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            // Check if a string is a valid URL
+            function isValidURL(string) {
+                try {
+                    new URL(string);
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+            }
+            
+            // Toggle result container functionality
+            const resultHeader = document.getElementById('result-header');
+            
+            resultHeader.addEventListener('click', function() {
+                resultContainer.classList.toggle('expanded');
+            });
+            
+            // URL parsing functionality
+            submitBtn.addEventListener('click', function() {
+                clearForm();
+                const url = urlInput.value.trim();
+                // check if url is valid
+                if (!isValidURL(url)) {
+                    showError('需要输入有效的URL');
                     return;
                 }
                 
                 // Reset UI
                 hideError();
-                resultContainer.style.display = 'none';
                 loading.style.display = 'block';
+                
+                // Parse URL parameters before sending to API
+                parseUrlParameters(url);
                 
                 // Send request to API
                 fetch(`http://localhost:8081/api/parse?url=${encodeURIComponent(url)}`)
@@ -155,6 +235,16 @@
                         resultContent.textContent = JSON.stringify(data, null, 2);
                         resultContainer.style.display = 'block';
                         loading.style.display = 'none';
+                        
+                        // Extract file URL from content if available
+                        if (data && data.content) {
+                            const fileUrl = extractFileUrl(data.content);
+                            if (fileUrl) {
+                                const fileUrlLink = document.getElementById('file-url');
+                                fileUrlLink.textContent = fileUrl;
+                                fileUrlLink.href = fileUrl;
+                            }
+                        }
                     })
                     .catch(error => {
                         console.error('Error:', error);
@@ -162,6 +252,61 @@
                         loading.style.display = 'none';
                     });
             });
+            
+            // Parse URL parameters and populate form fields
+            function parseUrlParameters(urlString) {
+                try {
+                    const urlObj = new URL(urlString);
+                    const params = new URLSearchParams(urlObj.search);
+                    
+                    // Case-insensitive parameter search
+                    let certificateNo = '';
+                    let sampleNo = '';
+                    
+                    // Check for parameters with any capitalization
+                    for (const [key, value] of params.entries()) {
+                        if (key.toLowerCase() === 'certificateno') {
+                            certificateNo = value;
+                        } else if (key.toLowerCase() === 'sampleno') {
+                            sampleNo = value;
+                        }
+                    }
+                    
+                    // Fill the form fields if parameters were found
+                    if (certificateNo) {
+                        certificateNoInput.textContent = certificateNo;
+                    }
+                    
+                    if (sampleNo) {
+                        sampleNoInput.textContent = sampleNo;
+                    }
+                } catch (error) {
+                    console.error('Error parsing URL parameters:', error);
+                }
+            }
+            
+            // Extract file URL from API response
+            function extractFileUrl(content) {
+                try {
+                    // Look for patterns like viewer.html?file=http://...
+                    const filePattern = /viewer\.html\?file=([^"&\s]+)/i;
+                    const match = content.match(filePattern);
+                    
+                    if (match && match[1]) {
+                        // Clean up the URL (replace escaped backslashes with forward slashes)
+                        let fileUrl = match[1].replace(/\\\\|\\\//g, '/');
+                        
+                        // Decode any URL encoded characters
+                        fileUrl = decodeURIComponent(fileUrl);
+                        
+                        return fileUrl;
+                    }
+                    return '';
+                } catch (error) {
+                    console.error('Error extracting file URL:', error);
+                    return '';
+                }
+            }
             
             // Allow form submission with Enter key
             urlInput.addEventListener('keypress', function(e) {
@@ -179,6 +324,58 @@
                 errorMessage.textContent = '';
                 errorMessage.style.display = 'none';
             }
+            
+            // Clear form function
+            function clearForm() {
+                // Clear parameter values
+                certificateNoInput.textContent = '';
+                sampleNoInput.textContent = '';
+                
+                // Clear file URL
+                const fileUrlLink = document.getElementById('file-url');
+                fileUrlLink.textContent = '';
+                fileUrlLink.href = '#';
+                
+                // Hide results
+                qrResult.style.display = 'none';
+                resultContainer.style.display = 'none';
+            }
+            
+            // Clear parameters button functionality
+            clearParamsBtn.addEventListener('click', function() {
+                clearForm();
+            });
+            
+            // Copy parameters button functionality
+            copyParamsBtn.addEventListener('click', function() {
+                const certificateNo = certificateNoInput.value.trim();
+                const sampleNo = sampleNoInput.value.trim();
+                
+                if (!certificateNo && !sampleNo) {
+                    showError('No parameter values to copy');
+                    return;
+                }
+                
+                // Create text to copy
+                let copyText = '';
+                if (certificateNo) copyText += `Certificate NO: ${certificateNo}\n`;
+                if (sampleNo) copyText += `Sample NO: ${sampleNo}`;
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(copyText)
+                    .then(() => {
+                        // Show success message
+                        const originalText = copyParamsBtn.textContent;
+                        copyParamsBtn.textContent = 'Copied!';
+                        setTimeout(() => {
+                            copyParamsBtn.textContent = originalText;
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                        showError('Failed to copy to clipboard');
+                    });
+            });
         });
     </script>
 </body>
