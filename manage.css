@@ -236,3 +236,84 @@ button:hover {
 .param-value a:hover {
     text-decoration: underline;
 }
+
+/* Form data card styles */
+.form-data-card {
+    margin-top: 30px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 12px 20px;
+    background-color: #f1f1f1;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.form-data-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.form-data-card.expanded .form-data-content {
+    max-height: 500px;
+    overflow: auto;
+}
+
+.form-data-card .toggle-icon {
+    font-size: 18px;
+    transition: transform 0.3s;
+}
+
+.form-data-card.expanded .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.form-data-container {
+    padding: 20px;
+}
+
+.form-data-item {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+}
+
+.form-data-key {
+    font-weight: bold;
+    width: 30%;
+    padding-right: 10px;
+}
+
+.form-data-value {
+    width: 70%;
+}
+
+.form-data-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.form-data-input:focus {
+    border-color: #409eff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}

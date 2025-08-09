@@ -55,6 +55,16 @@
             </div>
         </div>
         
+        <div class="form-data-card" id="form-data-card">
+            <div class="card-header">
+                <h3>表单数据</h3>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="form-data-content">
+                <div id="form-data-container" class="form-data-container"></div>
+            </div>
+        </div>
+        
         <div class="result" id="result-container">
             <div class="result-header" id="result-header">
                 <h3>API 返回结果</h3>
@@ -81,6 +91,8 @@
             const sampleNoInput = document.getElementById('sample-no');
             const clearParamsBtn = document.getElementById('clear-params-btn');
             const copyParamsBtn = document.getElementById('copy-params-btn');
+            const formDataCard = document.getElementById('form-data-card');
+            const formDataContainer = document.getElementById('form-data-container');
             
             // Image paste functionality
             imagePasteContainer.addEventListener('click', function() {
@@ -198,11 +210,16 @@
                 }
             }
             
-            // Toggle result container functionality
+            // Toggle functionality for collapsible containers
             const resultHeader = document.getElementById('result-header');
+            const formDataHeader = document.querySelector('.form-data-card .card-header');
             
             resultHeader.addEventListener('click', function() {
                 resultContainer.classList.toggle('expanded');
+            });
+            
+            formDataHeader.addEventListener('click', function() {
+                formDataCard.classList.toggle('expanded');
             });
             
             // URL parsing functionality
@@ -244,6 +261,10 @@
                                 fileUrlLink.textContent = fileUrl;
                                 fileUrlLink.href = fileUrl;
                             }
+                            
+                            // Extract form data from content
+                            const formData = extractFormData(data.content);
+                            displayFormData(formData);
                         }
                     })
                     .catch(error => {
@@ -308,6 +329,82 @@
                 }
             }
             
+            // Extract key-value pairs from HTML content
+            function extractFormData(content) {
+                try {
+                    // Create a temporary DOM element to parse the HTML
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = content;
+                    
+                    // Find all elements with class "hang"
+                    const formData = {};
+                    const hangElements = tempDiv.querySelectorAll('.hang');
+                    
+                    hangElements.forEach(element => {
+                        // Get the text content before the colon as the key
+                        const text = element.textContent.trim();
+                        const colonIndex = text.indexOf(':');
+                        
+                        if (colonIndex !== -1) {
+                            const key = text.substring(0, colonIndex).trim();
+                            
+                            // Get the span content as the value
+                            const span = element.querySelector('span');
+                            const value = span ? span.textContent.trim() : '';
+                            
+                            formData[key] = value;
+                        }
+                    });
+                    
+                    return formData;
+                } catch (error) {
+                    console.error('Error extracting form data:', error);
+                    return {};
+                }
+            }
+            
+            // Display form data in the form-data-container
+            function displayFormData(formData) {
+                // Clear previous form data
+                formDataContainer.innerHTML = '';
+                
+                // Check if we have any form data
+                if (Object.keys(formData).length === 0) {
+                    formDataContainer.innerHTML = '<p>No form data found</p>';
+                    return;
+                }
+                
+                // Create elements for each key-value pair
+                for (const [key, value] of Object.entries(formData)) {
+                    const formDataItem = document.createElement('div');
+                    formDataItem.className = 'form-data-item';
+                    
+                    const keyElement = document.createElement('div');
+                    keyElement.className = 'form-data-key';
+                    keyElement.textContent = key;
+                    
+                    const valueElement = document.createElement('div');
+                    valueElement.className = 'form-data-value';
+                    
+                    // Create an editable input field for the value
+                    const inputElement = document.createElement('input');
+                    inputElement.type = 'text';
+                    inputElement.className = 'form-data-input';
+                    inputElement.value = value;
+                    inputElement.dataset.key = key; // Store the key for reference
+                    
+                    valueElement.appendChild(inputElement);
+                    
+                    formDataItem.appendChild(keyElement);
+                    formDataItem.appendChild(valueElement);
+                    
+                    formDataContainer.appendChild(formDataItem);
+                }
+                
+                // Show the form data card
+                formDataCard.classList.add('expanded');
+            }
+            
             // Allow form submission with Enter key
             urlInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -336,6 +433,10 @@
                 fileUrlLink.textContent = '';
                 fileUrlLink.href = '#';
                 
+                // Clear form data
+                formDataContainer.innerHTML = '';
+                formDataCard.classList.remove('expanded');
+                
                 // Hide results
                 qrResult.style.display = 'none';
                 resultContainer.style.display = 'none';
@@ -348,18 +449,35 @@
             
             // Copy parameters button functionality
             copyParamsBtn.addEventListener('click', function() {
-                const certificateNo = certificateNoInput.value.trim();
-                const sampleNo = sampleNoInput.value.trim();
+                const certificateNo = certificateNoInput.textContent.trim();
+                const sampleNo = sampleNoInput.textContent.trim();
+                const fileUrl = document.getElementById('file-url').textContent.trim();
                 
-                if (!certificateNo && !sampleNo) {
-                    showError('No parameter values to copy');
+                // Get all form data inputs
+                const formDataInputs = document.querySelectorAll('.form-data-input');
+                
+                if (!certificateNo && !sampleNo && !fileUrl && formDataInputs.length === 0) {
+                    showError('No values to copy');
                     return;
                 }
                 
                 // Create text to copy
                 let copyText = '';
                 if (certificateNo) copyText += `Certificate NO: ${certificateNo}\n`;
-                if (sampleNo) copyText += `Sample NO: ${sampleNo}`;
+                if (sampleNo) copyText += `Sample NO: ${sampleNo}\n`;
+                if (fileUrl) copyText += `PDF URL: ${fileUrl}\n`;
+                
+                // Add form data values
+                if (formDataInputs.length > 0) {
+                    copyText += '\n--- Form Data ---\n';
+                    formDataInputs.forEach(input => {
+                        const key = input.dataset.key;
+                        const value = input.value.trim();
+                        if (key && value) {
+                            copyText += `${key}: ${value}\n`;
+                        }
+                    });
+                }
                 
                 // Copy to clipboard
                 navigator.clipboard.writeText(copyText)
