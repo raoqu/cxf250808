@@ -496,8 +496,10 @@ button:hover {
     display: flex;
     align-items: center;
     gap: 8px;
-    width: calc(100% - 24px); /* Take full width minus close button width */
-    overflow: hidden; /* Prevent overflow */
+    width: calc(100% - 24px);
+    /* Take full width minus close button width */
+    overflow: hidden;
+    /* Prevent overflow */
 }
 
 #file-name {
@@ -506,7 +508,8 @@ button:hover {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: calc(100% - 20px); /* Allow space for the PDF icon */
+    max-width: calc(100% - 20px);
+    /* Allow space for the PDF icon */
 }
 
 /* Close button styles */
@@ -522,7 +525,8 @@ button:hover {
     transition: color 0.2s;
     width: 24px;
     height: 24px;
-    margin-left: auto; /* Push to the right */
+    margin-left: auto;
+    /* Push to the right */
 }
 
 .close-btn:hover {
@@ -541,4 +545,10 @@ button:hover {
 
 #clear-file-btn:hover {
     background-color: #f78989;
+}
+
+.list-all-link-container {
+    padding: 10px;
+    font-size: 12px;
+    text-align: right;
 }

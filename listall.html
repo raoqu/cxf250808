@@ -105,14 +105,23 @@
             text-align: center;
             font-size: 12px;
         }
+        
+        .count-display {
+            margin: 15px 0;
+            padding: 8px 12px;
+            background-color: #f0f8ff;
+            border-radius: 4px;
+            border-left: 3px solid #0066cc;
+            font-weight: bold;
+        }
     </style>
 </head>
 
 <body>
-    <h1>Certificate List</h1>
 
     <div id="loading" class="loading">Loading certificate list...</div>
     <div id="error" class="error" style="display: none;"></div>
+    <div id="count-display" class="count-display" style="display: none;">总记录数: <span id="item-count">0</span></div>
     <ul id="certificate-list"></ul>
 
     <script>
@@ -177,6 +186,12 @@
                         errorElement.style.display = 'block';
                         return;
                     }
+                    
+                    // Display the total count of certificates
+                    const countDisplay = document.getElementById('count-display');
+                    const itemCount = document.getElementById('item-count');
+                    itemCount.textContent = data.keys.length;
+                    countDisplay.style.display = 'block';
 
                     // Sort keys alphabetically
                     data.keys.sort();
