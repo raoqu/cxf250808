@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,31 +9,37 @@
     <script src="js/jsQR1.4.min.js"></script>
     <link rel="stylesheet" href="manage.css">
 </head>
+
 <body>
     <div class="container">
+        <div id="toast" class="toast" style="display: block;">
+            <div class="toast-content"></div>
+        </div>
         <div class="image-paste-container" id="image-paste-container">
             <p>点击这里或者粘贴包含二维码的图片</p>
             <p><small>二维码将被解析并自动填充URL</small></p>
             <img id="image-preview" class="image-preview" alt="Image preview">
             <div id="qr-result" class="qr-result"></div>
         </div>
-        
+
         <div class="form-group">
             <label for="url-input">输入URL:</label>
             <input type="url" id="url-input" placeholder="https://example.com" required>
         </div>
-        
+
         <button id="submit-btn">解析URL</button>
-        
+
         <div class="loading" id="loading">
             <div class="loading-spinner"></div>
             <p>Processing URL...</p>
         </div>
-        
+
         <div class="error" id="error-message"></div>
-        
-        <div class="param-card" id="param-card">
-            <h3>参数解析</h3>
+
+        <div class="form-data-card" id="form-data-card">
+            <div class="card-header">
+                <h3>表单数据</h3>
+            </div>
             <div class="param-form">
                 <div class="form-group">
                     <label for="certificate-no">Certificate NO:</label>
@@ -48,23 +55,56 @@
                         <a id="file-url" href="#" target="_blank"></a>
                     </div>
                 </div>
+
             </div>
             <div class="param-actions">
                 <button id="clear-params-btn" class="secondary-btn">Clear</button>
-                <button id="copy-params-btn">Copy Values</button>
+                <button id="copy-params-btn" class="secondary-btn">Copy Values</button>
+            </div>
+
+            <div id="form-data-container" class="form-data-container"></div>
+            <div class="form-data-content always-visible">
+                <div class="pdf-upload-container" id="pdf-upload-container" style="display: none;">
+                    <div class="file-input-wrapper">
+                        <div class="upload-area">
+                            <div class="upload-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                                    <path fill="currentColor"
+                                        d="M14 3v4a1 1 0 0 0 1 1h4v14H5V3h9m.12-1H5a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7.12a1 1 0 0 0-.29-.71l-4.12-4.12a1 1 0 0 0-.71-.29z" />
+                                    <path fill="currentColor" d="M16 12v4h-2v-4h-3l4-4 4 4h-3z" />
+                                </svg>
+                            </div>
+                            <div class="upload-text">
+                                <span>拖拽PDF到这里上传 或 点击浏览文件上传</span>
+                            </div>
+                            <input type="file" id="pdf-upload" accept="application/pdf" />
+                        </div>
+                        <div class="file-info">
+                            <div id="selected-file-info" style="display: none; position: relative;">
+                                <div class="file-preview">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+                                        <path fill="#e74c3c"
+                                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM7 15h10v2H7v-2zm0-4h10v2H7v-2z" />
+                                    </svg>
+                                    <span id="file-name">document.pdf</span>
+                                </div>
+                                <button id="clear-file-btn" class="close-btn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14">
+                                        <path fill="currentColor"
+                                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button id="submit-form-btn" class="primary-btn" disabled>提交保存</button>
+                </div>
             </div>
         </div>
-        
-        <div class="form-data-card" id="form-data-card">
-            <div class="card-header">
-                <h3>表单数据</h3>
-                <span class="toggle-icon">▼</span>
-            </div>
-            <div class="form-data-content">
-                <div id="form-data-container" class="form-data-container"></div>
-            </div>
-        </div>
-        
+
         <div class="result" id="result-container">
             <div class="result-header" id="result-header">
                 <h3>API 返回结果</h3>
@@ -77,7 +117,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const urlInput = document.getElementById('url-input');
             const submitBtn = document.getElementById('submit-btn');
             const loading = document.getElementById('loading');
@@ -91,33 +131,36 @@
             const sampleNoInput = document.getElementById('sample-no');
             const clearParamsBtn = document.getElementById('clear-params-btn');
             const copyParamsBtn = document.getElementById('copy-params-btn');
+            const testToastBtn = document.getElementById('test-toast-btn');
             const formDataCard = document.getElementById('form-data-card');
             const formDataContainer = document.getElementById('form-data-container');
-            
+            const pdfUpload = document.getElementById('pdf-upload');
+            const clearFileBtn = document.getElementById('clear-file-btn');
+
             // Image paste functionality
-            imagePasteContainer.addEventListener('click', function() {
+            imagePasteContainer.addEventListener('click', function () {
                 // Create a hidden file input and trigger it
                 const fileInput = document.createElement('input');
                 fileInput.type = 'file';
                 fileInput.accept = 'image/*';
                 fileInput.style.display = 'none';
                 document.body.appendChild(fileInput);
-                
+
                 fileInput.click();
-                
-                fileInput.addEventListener('change', function() {
+
+                fileInput.addEventListener('change', function () {
                     if (fileInput.files && fileInput.files[0]) {
                         handleImageFile(fileInput.files[0]);
                     }
                     document.body.removeChild(fileInput);
                 });
             });
-            
+
             // Handle paste events anywhere in the document
-            document.addEventListener('paste', function(e) {
+            document.addEventListener('paste', function (e) {
                 if (e.clipboardData && e.clipboardData.items) {
                     const items = e.clipboardData.items;
-                    
+
                     for (let i = 0; i < items.length; i++) {
                         if (items[i].type.indexOf('image') !== -1) {
                             const blob = items[i].getAsFile();
@@ -127,56 +170,56 @@
                     }
                 }
             });
-            
+
             // Handle drag and drop
-            imagePasteContainer.addEventListener('dragover', function(e) {
+            imagePasteContainer.addEventListener('dragover', function (e) {
                 e.preventDefault();
                 imagePasteContainer.classList.add('active');
             });
-            
-            imagePasteContainer.addEventListener('dragleave', function() {
+
+            imagePasteContainer.addEventListener('dragleave', function () {
                 imagePasteContainer.classList.remove('active');
             });
-            
-            imagePasteContainer.addEventListener('drop', function(e) {
+
+            imagePasteContainer.addEventListener('drop', function (e) {
                 e.preventDefault();
                 imagePasteContainer.classList.remove('active');
-                
+
                 if (e.dataTransfer.files && e.dataTransfer.files[0]) {
                     handleImageFile(e.dataTransfer.files[0]);
                 }
             });
-            
+
             // Process the image file and look for QR code
             function handleImageFile(file) {
                 // Show the image preview
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     imagePreview.src = e.target.result;
                     imagePreview.style.display = 'block';
-                    
+
                     // Create an image element to use for QR code detection
                     const img = new Image();
-                    img.onload = function() {
+                    img.onload = function () {
                         // Create canvas to draw the image for QR code processing
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
                         canvas.width = img.width;
                         canvas.height = img.height;
                         ctx.drawImage(img, 0, 0);
-                        
+
                         // Get image data for QR code processing
                         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        
+
                         // Process with jsQR
                         try {
                             const code = jsQR(imageData.data, imageData.width, imageData.height);
-                            
+
                             if (code) {
                                 // QR code found
                                 qrResult.textContent = `检测到二维码: ${code.data}`;
                                 qrResult.style.display = 'block';
-                                
+
                                 // Fill the URL input if it looks like a URL
                                 if (isValidURL(code.data)) {
                                     urlInput.value = code.data;
@@ -199,7 +242,7 @@
                 };
                 reader.readAsDataURL(file);
             }
-            
+
             // Check if a string is a valid URL
             function isValidURL(string) {
                 try {
@@ -209,36 +252,228 @@
                     return false;
                 }
             }
-            
+
             // Toggle functionality for collapsible containers
             const resultHeader = document.getElementById('result-header');
-            const formDataHeader = document.querySelector('.form-data-card .card-header');
-            
-            resultHeader.addEventListener('click', function() {
+
+            resultHeader.addEventListener('click', function () {
                 resultContainer.classList.toggle('expanded');
             });
-            
-            formDataHeader.addEventListener('click', function() {
-                formDataCard.classList.toggle('expanded');
+
+            // PDF upload functionality
+            // Variables already declared above
+
+            // Get file input wrapper element
+            const fileInputWrapper = document.querySelector('.file-input-wrapper');
+
+            // Handle file selection
+            pdfUpload.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+
+                    // Update UI
+                    uploadArea.style.display = 'none';
+                    const selectedFileInfo = document.getElementById('selected-file-info');
+                    selectedFileInfo.style.display = 'flex';
+                    document.getElementById('file-name').textContent = file.name;
+
+                    // Create form data
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    // Upload file
+                    fetch('http://localhost:8081/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                showToast('Upload failed: ' + data.error, 'error');
+                                clearFileSelection();
+                            } else {
+                                showToast('File uploaded successfully', 'success');
+                                validateForm(); // Validate form after successful upload
+                            }
+                        })
+                        .catch(error => {
+                            showToast('Upload failed: ' + error.message, 'error');
+                            clearFileSelection();
+                        });
+                }
             });
-            
+
+            // Upload file to server
+            function uploadFile(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                const selectedFileInfoElement = document.getElementById('selected-file-info');
+
+                fetch('http://localhost:8081/api/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            showToast('Upload failed: ' + data.error, 'error');
+                            // Show upload area again on error
+                            uploadArea.style.display = 'flex';
+                            selectedFileInfoElement.style.display = 'none';
+                        } else {
+                            showToast('File uploaded successfully', 'success');
+                            // You can store the file path if needed
+                            // const filePath = data.path;
+                        }
+                    })
+                    .catch(error => {
+                        showToast('Upload failed: ' + error.message, 'error');
+                        // Show upload area again on error
+                        uploadArea.style.display = 'flex';
+                        selectedFileInfoElement.style.display = 'none';
+                    });
+            }
+
+            // Clear file selection
+            clearFileBtn.addEventListener('click', function () {
+                clearFileSelection();
+                validateForm(); // Validate form after clearing file
+            });
+
+            function clearFileSelection() {
+                pdfUpload.value = '';
+                uploadArea.style.display = 'flex';
+                const selectedFileInfoElement = document.getElementById('selected-file-info');
+                selectedFileInfoElement.style.display = 'none';
+            }
+
+            // Drag and drop functionality
+            const uploadArea = document.querySelector('.upload-area');
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                uploadArea.classList.add('drag-over');
+            }
+
+            function unhighlight() {
+                uploadArea.classList.remove('drag-over');
+            }
+
+            uploadArea.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files && files.length > 0) {
+                    const file = files[0];
+
+                    // Check if file is a PDF
+                    if (file.type !== 'application/pdf') {
+                        showError('Please select a PDF file');
+                        return;
+                    }
+
+                    // Update file input with the dropped file
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    pdfUpload.files = dataTransfer.files;
+
+                    // Trigger change event
+                    const event = new Event('change');
+                    pdfUpload.dispatchEvent(event);
+                }
+            }
+
+            // Clear file selection
+            clearFileBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                clearFileSelection();
+            });
+
             // URL parsing functionality
-            submitBtn.addEventListener('click', function() {
+            submitBtn.addEventListener('click', function () {
                 clearForm();
+                parseURL();
+            });
+
+            // Form validation and submission functionality
+            const submitFormBtn = document.getElementById('submit-form-btn');
+
+            // Validate form inputs and enable/disable submit button
+            function validateForm() {
+                // Check if PDF is uploaded
+                const pdfUploaded = document.getElementById('file-name').textContent !== 'document.pdf';
+
+                // Check if all form inputs are filled
+                const certificateNoFilled = certificateNoInput.textContent.trim() !== '';
+                const sampleNoFilled = sampleNoInput.textContent.trim() !== '';
+                const fileUrlFilled = document.getElementById('file-url').textContent.trim() !== '';
+
+                // Check if form data container has items
+                const formDataFilled = formDataContainer.children.length > 0;
+
+                // Enable submit button only if all conditions are met
+                submitFormBtn.disabled = !(pdfUploaded && certificateNoFilled && sampleNoFilled && fileUrlFilled && formDataFilled);
+            }
+
+            // Submit form data to API
+            submitFormBtn.addEventListener('click', function () {
+                // Get form data
+                const formData = getFormData();
+
+                // Send data to API
+                fetch('http://localhost:8081/api/set', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            showToast('Error: ' + data.error, 'error');
+                        } else {
+                            showToast('信息提交成功', 'success');
+                        }
+                    })
+                    .catch(error => {
+                        showToast('信息提交失败: ' + error.message, 'error');
+                    });
+            });
+
+            // Parse URL parameters and populate form fields
+            function parseURL() {
                 const url = urlInput.value.trim();
                 // check if url is valid
                 if (!isValidURL(url)) {
-                    showError('需要输入有效的URL');
+                    showToast('需要输入有效的URL', 'error');
                     return;
                 }
-                
+
                 // Reset UI
                 hideError();
                 loading.style.display = 'block';
-                
+
                 // Parse URL parameters before sending to API
                 parseUrlParameters(url);
-                
+
                 // Send request to API
                 fetch(`http://localhost:8081/api/parse?url=${encodeURIComponent(url)}`)
                     .then(response => {
@@ -252,7 +487,7 @@
                         resultContent.textContent = JSON.stringify(data, null, 2);
                         resultContainer.style.display = 'block';
                         loading.style.display = 'none';
-                        
+
                         // Extract file URL from content if available
                         if (data && data.content) {
                             const fileUrl = extractFileUrl(data.content);
@@ -261,10 +496,13 @@
                                 fileUrlLink.textContent = fileUrl;
                                 fileUrlLink.href = fileUrl;
                             }
-                            
+
                             // Extract form data from content
                             const formData = extractFormData(data.content);
                             displayFormData(formData);
+
+                            // Show PDF upload container after successful parse
+                            document.getElementById('pdf-upload-container').style.display = 'block';
                         }
                     })
                     .catch(error => {
@@ -272,18 +510,18 @@
                         showError(`Failed to parse URL: ${error.message}`);
                         loading.style.display = 'none';
                     });
-            });
-            
+            }
+
             // Parse URL parameters and populate form fields
             function parseUrlParameters(urlString) {
                 try {
                     const urlObj = new URL(urlString);
                     const params = new URLSearchParams(urlObj.search);
-                    
+
                     // Case-insensitive parameter search
                     let certificateNo = '';
                     let sampleNo = '';
-                    
+
                     // Check for parameters with any capitalization
                     for (const [key, value] of params.entries()) {
                         if (key.toLowerCase() === 'certificateno') {
@@ -292,12 +530,12 @@
                             sampleNo = value;
                         }
                     }
-                    
+
                     // Fill the form fields if parameters were found
                     if (certificateNo) {
                         certificateNoInput.textContent = certificateNo;
                     }
-                    
+
                     if (sampleNo) {
                         sampleNoInput.textContent = sampleNo;
                     }
@@ -305,21 +543,21 @@
                     console.error('Error parsing URL parameters:', error);
                 }
             }
-            
+
             // Extract file URL from API response
             function extractFileUrl(content) {
                 try {
                     // Look for patterns like viewer.html?file=http://...
                     const filePattern = /viewer\.html\?file=([^"&\s]+)/i;
                     const match = content.match(filePattern);
-                    
+
                     if (match && match[1]) {
                         // Clean up the URL (replace escaped backslashes with forward slashes)
                         let fileUrl = match[1].replace(/\\\\|\\\//g, '/');
-                        
+
                         // Decode any URL encoded characters
                         fileUrl = decodeURIComponent(fileUrl);
-                        
+
                         return fileUrl;
                     }
                     return '';
@@ -328,177 +566,215 @@
                     return '';
                 }
             }
-            
+
             // Extract key-value pairs from HTML content
             function extractFormData(content) {
                 try {
                     // Create a temporary DOM element to parse the HTML
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = content;
-                    
+
                     // Find all elements with class "hang"
                     const formData = {};
                     const hangElements = tempDiv.querySelectorAll('.hang');
-                    
+
                     hangElements.forEach(element => {
                         // Get the text content before the colon as the key
                         const text = element.textContent.trim();
                         const colonIndex = text.indexOf(':');
-                        
+
                         if (colonIndex !== -1) {
                             const key = text.substring(0, colonIndex).trim();
-                            
+
                             // Get the span content as the value
                             const span = element.querySelector('span');
                             const value = span ? span.textContent.trim() : '';
-                            
+
                             formData[key] = value;
                         }
                     });
-                    
+
                     return formData;
                 } catch (error) {
                     console.error('Error extracting form data:', error);
                     return {};
                 }
+            };
+
+            // Add a form data item to the container
+            function addFormDataItem(key, value) {
+                const formDataItem = document.createElement('div');
+                formDataItem.className = 'form-data-item';
+
+                const keyElement = document.createElement('div');
+                keyElement.className = 'form-data-key';
+                keyElement.textContent = key;
+
+                const valueElement = document.createElement('div');
+                valueElement.className = 'form-data-value';
+
+                // Create an editable input field for the value
+                const inputElement = document.createElement('input');
+                inputElement.type = 'text';
+                inputElement.className = 'form-data-input';
+                inputElement.value = value;
+                inputElement.dataset.key = key; // Store the key for reference
+
+                // Add event listener to validate form when input changes
+                inputElement.addEventListener('input', validateForm);
+
+                valueElement.appendChild(inputElement);
+
+                formDataItem.appendChild(keyElement);
+                formDataItem.appendChild(valueElement);
+
+                formDataContainer.appendChild(formDataItem);
             }
-            
+
             // Display form data in the form-data-container
             function displayFormData(formData) {
-                // Clear previous form data
                 formDataContainer.innerHTML = '';
-                
-                // Check if we have any form data
-                if (Object.keys(formData).length === 0) {
-                    formDataContainer.innerHTML = '<p>No form data found</p>';
-                    return;
-                }
-                
-                // Create elements for each key-value pair
+
                 for (const [key, value] of Object.entries(formData)) {
-                    const formDataItem = document.createElement('div');
-                    formDataItem.className = 'form-data-item';
-                    
-                    const keyElement = document.createElement('div');
-                    keyElement.className = 'form-data-key';
-                    keyElement.textContent = key;
-                    
-                    const valueElement = document.createElement('div');
-                    valueElement.className = 'form-data-value';
-                    
-                    // Create an editable input field for the value
-                    const inputElement = document.createElement('input');
-                    inputElement.type = 'text';
-                    inputElement.className = 'form-data-input';
-                    inputElement.value = value;
-                    inputElement.dataset.key = key; // Store the key for reference
-                    
-                    valueElement.appendChild(inputElement);
-                    
-                    formDataItem.appendChild(keyElement);
-                    formDataItem.appendChild(valueElement);
-                    
-                    formDataContainer.appendChild(formDataItem);
+                    addFormDataItem(key, value);
                 }
-                
+
+                // Validate form after displaying form data
+                validateForm();
+
                 // Show the form data card
                 formDataCard.classList.add('expanded');
             }
-            
+
             // Allow form submission with Enter key
-            urlInput.addEventListener('keypress', function(e) {
+            urlInput.addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
                     submitBtn.click();
                 }
             });
-            
+
+            // Error message functionality
             function showError(message) {
                 errorMessage.textContent = message;
                 errorMessage.style.display = 'block';
             }
-            
+
             function hideError() {
                 errorMessage.textContent = '';
                 errorMessage.style.display = 'none';
             }
-            
+
+            // Toast notification functionality
+            function showToast(message, type = 'error', duration = 3000) {
+                console.log('Showing toast:', message, type);
+                const toast = document.getElementById('toast');
+                const toastContent = document.querySelector('.toast-content');
+
+                // Set message and type
+                toastContent.textContent = message;
+                toast.className = 'toast';
+                if (type === 'error') {
+                    toast.classList.add('error');
+                } else if (type === 'success') {
+                    toast.classList.add('success');
+                }
+
+                // Force reflow to ensure animation works
+                void toast.offsetWidth;
+
+                // Show toast immediately
+                toast.classList.add('show');
+
+                // Hide toast after duration
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, duration);
+            }
+
             // Clear form function
             function clearForm() {
                 // Clear parameter values
                 certificateNoInput.textContent = '';
                 sampleNoInput.textContent = '';
-                
+
                 // Clear file URL
                 const fileUrlLink = document.getElementById('file-url');
                 fileUrlLink.textContent = '';
                 fileUrlLink.href = '#';
-                
+
                 // Clear form data
                 formDataContainer.innerHTML = '';
                 formDataCard.classList.remove('expanded');
-                
+
+                // Clear PDF file selection
+                // Use our own implementation instead of calling clearFileSelection()
+                // to avoid any reference errors
+                pdfUpload.value = '';
+                uploadArea.style.display = 'flex';
+                const selectedFileInfoElement = document.getElementById('selected-file-info');
+                if (selectedFileInfoElement) {
+                    selectedFileInfoElement.style.display = 'none';
+                }
+
                 // Hide results
                 qrResult.style.display = 'none';
                 resultContainer.style.display = 'none';
+
+                // Hide PDF upload container
+                document.getElementById('pdf-upload-container').style.display = 'none';
             }
-            
+
             // Clear parameters button functionality
-            clearParamsBtn.addEventListener('click', function() {
+            clearParamsBtn.addEventListener('click', function () {
                 clearForm();
             });
-            
-            // Copy parameters button functionality
-            copyParamsBtn.addEventListener('click', function() {
+
+            function getFormData() {
                 const certificateNo = certificateNoInput.textContent.trim();
                 const sampleNo = sampleNoInput.textContent.trim();
                 const fileUrl = document.getElementById('file-url').textContent.trim();
-                
-                // Get all form data inputs
                 const formDataInputs = document.querySelectorAll('.form-data-input');
-                
-                if (!certificateNo && !sampleNo && !fileUrl && formDataInputs.length === 0) {
-                    showError('No values to copy');
-                    return;
-                }
-                
-                // Create JSON object to copy
-                const jsonData = {};
-                
-                // Add parameters
-                if (certificateNo) jsonData.CertificateNO = certificateNo;
-                if (sampleNo) jsonData.SampleNo = sampleNo;
-                if (fileUrl) jsonData.FileUrl = fileUrl;
-                
+                const pdfFileName = document.getElementById('selected-file-info').textContent.trim();
+                const formData = {};
+                formData.certificateNo = certificateNo;
+                formData.sampleNo = sampleNo;
+                formData.fileUrl = fileUrl;
+                formData.pdfFileName = pdfFileName;
+                formDataInputs.forEach(input => {
+                    formData[input.name] = input.value;
+                });
                 // Add form data values
                 if (formDataInputs.length > 0) {
                     formDataInputs.forEach(input => {
                         const key = input.dataset.key;
                         const value = input.value.trim();
                         if (key && value) {
-                            jsonData[key] = value;
+                            formData[key] = value;
                         }
                     });
                 }
-                
-                // Convert to JSON string with pretty formatting
-                const jsonString = JSON.stringify(jsonData, null, 2);
-                
-                // Copy to clipboard
+                return formData;
+            }
+
+            function copyValues() {
+                const formData = getFormData();
+                if (!formData.certificateNo) {
+                    showToast('No values to copy', 'error');
+                    return;
+                }
+
+                const jsonString = JSON.stringify(formData, null, 2);
+
                 navigator.clipboard.writeText(jsonString)
                     .then(() => {
-                        // Show success message
-                        const originalText = copyParamsBtn.textContent;
-                        copyParamsBtn.textContent = 'Copied!';
-                        setTimeout(() => {
-                            copyParamsBtn.textContent = originalText;
-                        }, 2000);
+                        showToast('复制成功', 'success');
                     })
                     .catch(err => {
-                        console.error('Failed to copy: ', err);
-                        showError('Failed to copy to clipboard');
+                        showToast('复制失败', 'error');
                     });
-            });
+            }
         });
     </script>
 </body>
+
 </html>

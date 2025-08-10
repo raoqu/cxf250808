@@ -199,6 +199,7 @@ button:hover {
 }
 
 .param-form {
+    padding: 20px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 15px;
@@ -209,7 +210,7 @@ button:hover {
 }
 
 .param-actions {
-    margin-top: 20px;
+    padding: 0 20px 0 20px;
     display: flex;
     justify-content: flex-end;
     gap: 10px;
@@ -263,14 +264,12 @@ button:hover {
 }
 
 .form-data-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out;
+    overflow: auto;
 }
 
-.form-data-card.expanded .form-data-content {
-    max-height: 500px;
-    overflow: auto;
+.form-data-content.always-visible {
+    max-height: none;
+    padding: 15px 0;
 }
 
 .form-data-card .toggle-icon {
@@ -284,6 +283,32 @@ button:hover {
 
 .form-data-container {
     padding: 20px;
+}
+
+.form-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.primary-btn {
+    padding: 10px 20px;
+    background-color: #409eff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.primary-btn:hover {
+    background-color: #66b1ff;
+}
+
+.primary-btn:disabled {
+    background-color: #a0cfff;
+    cursor: not-allowed;
 }
 
 .form-data-item {
@@ -303,6 +328,14 @@ button:hover {
     width: 70%;
 }
 
+.form-data-value input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
 .form-data-input {
     width: 100%;
     padding: 8px;
@@ -316,4 +349,196 @@ button:hover {
     border-color: #409eff;
     outline: none;
     box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+/* Toast notification */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 4px;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s, transform 0.3s;
+    max-width: 300px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    display: block !important;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast.error {
+    background-color: rgba(220, 53, 69, 0.9);
+}
+
+.toast.success {
+    background-color: rgba(40, 167, 69, 0.9);
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+/* PDF Upload Styles */
+.pdf-upload-container {
+    margin-bottom: 20px;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.pdf-upload-container h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 16px;
+}
+
+.file-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.upload-area {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover {
+    border-color: #409eff;
+    background-color: #f0f7ff;
+}
+
+.upload-area.drag-over {
+    border-color: #409eff;
+    background-color: #ecf5ff;
+}
+
+.upload-icon {
+    margin-bottom: 15px;
+}
+
+.upload-icon svg {
+    width: 48px;
+    height: 48px;
+    color: #409eff;
+}
+
+.upload-text {
+    text-align: center;
+    color: #606266;
+}
+
+.upload-text span {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.upload-button {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #409eff;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+.upload-button:hover {
+    background-color: #66b1ff;
+}
+
+.file-input-wrapper input[type="file"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-info {
+    margin-top: 10px;
+}
+
+#selected-file-info {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #e6e8eb;
+    position: relative;
+}
+
+.file-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: calc(100% - 24px); /* Take full width minus close button width */
+    overflow: hidden; /* Prevent overflow */
+}
+
+#file-name {
+    font-size: 14px;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 20px); /* Allow space for the PDF icon */
+}
+
+/* Close button styles */
+.close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    transition: color 0.2s;
+    width: 24px;
+    height: 24px;
+    margin-left: auto; /* Push to the right */
+}
+
+.close-btn:hover {
+    color: #333;
+}
+
+#clear-file-btn {
+    padding: 6px 12px;
+    background-color: #f56c6c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#clear-file-btn:hover {
+    background-color: #f78989;
 }
