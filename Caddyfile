@@ -9,6 +9,9 @@
         X-Content-Type-Options "nosniff"
         X-Frame-Options "SAMEORIGIN"
         Referrer-Policy "strict-origin-when-cross-origin"
+        
+        # Content Security Policy to allow scripts, styles, and API connections
+        Content-Security-Policy "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src 'self'"
 
         # Enable CORS for local development
         Access-Control-Allow-Origin "*"
@@ -18,6 +21,12 @@
 
     handle /api/* {
         reverse_proxy 127.0.0.1:6161
+    }
+
+    # Custom error handling - show 404.html for not found errors
+    handle_errors {
+        rewrite * /404.html
+        file_server
     }
 
     # Log requests to console
