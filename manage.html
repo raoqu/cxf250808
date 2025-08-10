@@ -461,26 +461,30 @@
                     return;
                 }
                 
-                // Create text to copy
-                let copyText = '';
-                if (certificateNo) copyText += `Certificate NO: ${certificateNo}\n`;
-                if (sampleNo) copyText += `Sample NO: ${sampleNo}\n`;
-                if (fileUrl) copyText += `PDF URL: ${fileUrl}\n`;
+                // Create JSON object to copy
+                const jsonData = {};
+                
+                // Add parameters
+                if (certificateNo) jsonData.CertificateNO = certificateNo;
+                if (sampleNo) jsonData.SampleNo = sampleNo;
+                if (fileUrl) jsonData.FileUrl = fileUrl;
                 
                 // Add form data values
                 if (formDataInputs.length > 0) {
-                    copyText += '\n--- Form Data ---\n';
                     formDataInputs.forEach(input => {
                         const key = input.dataset.key;
                         const value = input.value.trim();
                         if (key && value) {
-                            copyText += `${key}: ${value}\n`;
+                            jsonData[key] = value;
                         }
                     });
                 }
                 
+                // Convert to JSON string with pretty formatting
+                const jsonString = JSON.stringify(jsonData, null, 2);
+                
                 // Copy to clipboard
-                navigator.clipboard.writeText(copyText)
+                navigator.clipboard.writeText(jsonString)
                     .then(() => {
                         // Show success message
                         const originalText = copyParamsBtn.textContent;
