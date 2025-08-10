@@ -29,6 +29,19 @@
         file_server
     }
 
+    handle /Service/GetReport {
+        rewrite * /lookup.html
+    }
+    handle /Service/* {
+        uri strip_prefix /Service
+        rewrite * {path}
+    }
+    handle /ReportFiles/* {
+        uri strip_prefix /ReportFiles
+        root * /Users/raoqu/mylab/___f/backend/upload
+        file_server
+    }
+
     # Log requests to console
     log {
         output stdout

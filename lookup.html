@@ -16,6 +16,8 @@
   <meta name=viewport content="width=device-width, initial-scale=1.0">
   <title>湖北省建设工程质量检测监管系统</title>
   <meta name=referrer content=no-referrer>
+  <meta http-equiv=content-security-policy
+    content="default-src 'none'; font-src 'self' data:; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self' data:; script-src 'unsafe-inline' 'unsafe-eval' data:; object-src 'self' data:; frame-src 'self' data:; connect-src 'self';">
 </head>
 
 <body class=index>
@@ -116,9 +118,12 @@
             let reportData;
             try {
               reportData = JSON.parse(result.data);
+              // Store reportData in window object for access in openReport
+              window.reportData = reportData;
             } catch (e) {
               console.error('Failed to parse JSON data:', e);
               reportData = {};
+              window.reportData = {};
             }
             
             // Populate the card with the data
@@ -236,8 +241,11 @@
       pdfIframe.style.height = '100%'; // Fill the entire dialog body
       pdfIframe.style.border = 'none';
       
-      // Use PDF.js viewer with the PDF URL
-      pdfIframe.src = 'viewer/viewer.html?file=/a.pdf';
+      // Use PDF.js viewer with the dynamic PDF URL from response data
+      // Get the reportData from the global scope if it exists
+      const reportData = window.reportData || {};
+      const pdfFileName = reportData.pdfFileName || '/a.pdf';
+      pdfIframe.src = `viewer/viewer.html?file=/ReportFiles/${pdfFileName}`;
       
       // Add iframe to dialog body
       dialogBody.appendChild(pdfIframe);
@@ -259,7 +267,9 @@
         const existingDownloadBtn = footerSpan.querySelector('.download-btn');
         if (!existingDownloadBtn) {
           const downloadBtn = document.createElement('a');
-          downloadBtn.href = 'a.pdf';
+          const reportData = window.reportData || {};
+          const pdfFileName = reportData.pdfFileName || '/a.pdf';
+          downloadBtn.href = pdfFileName;
           downloadBtn.download = '检测报告.pdf';
           downloadBtn.className = 'el-button el-button--primary download-btn';
           downloadBtn.style.marginRight = '10px';
