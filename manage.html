@@ -282,7 +282,7 @@
                     formData.append('file', file);
 
                     // Upload file
-                    fetch('http://localhost:8081/api/upload', {
+                    fetch('/api/upload', {
                         method: 'POST',
                         body: formData
                     })
@@ -309,7 +309,7 @@
                 formData.append('file', file);
                 const selectedFileInfoElement = document.getElementById('selected-file-info');
 
-                fetch('http://localhost:8081/api/upload', {
+                fetch('/api/upload', {
                     method: 'POST',
                     body: formData
                 })
@@ -436,9 +436,15 @@
             submitFormBtn.addEventListener('click', function () {
                 // Get form data
                 const formData = getFormData();
+                if (!formData.certificateNo || !formData.sampleNo) {
+                    showToast('证书编号和样品编号不能为空', 'error');
+                    return;
+                }
+                // Upper case key
+                const key = formData.certificateNo.toUpperCase() + '_' + formData.sampleNo.toUpperCase();
 
                 // Send data to API
-                fetch('http://localhost:8081/api/set', {
+                fetch('/api/set?key=' + key, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -475,7 +481,7 @@
                 parseUrlParameters(url);
 
                 // Send request to API
-                fetch(`http://localhost:8081/api/parse?url=${encodeURIComponent(url)}`)
+                fetch(`/api/parse?url=${encodeURIComponent(url)}`)
                     .then(response => {
                         if (!response.ok) {
                             throw new Error(`HTTP error! Status: ${response.status}`);
