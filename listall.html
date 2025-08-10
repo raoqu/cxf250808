@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate List</title>
+    <script src="js/qrious.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+
+        li:hover {
+            background-color: #f0f0f0;
+        }
+
+        a {
+            color: #0066cc;
+            text-decoration: none;
+            display: block;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        .error {
+            color: #cc0000;
+            background-color: #ffeeee;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .qr-container {
+            display: inline-block;
+            background: white;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-right: 20px;
+            vertical-align: top;
+        }
+
+        .qr-code {
+            width: 128px;
+            height: 128px;
+            display: block;
+            margin: 0 auto 10px;
+        }
+
+        .certificate-info {
+            margin-top: 10px;
+            font-size: 12px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        .certificate-info p {
+            margin: 5px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .certificate-info .label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .loading-info {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Certificate List</h1>
+
+    <div id="loading" class="loading">Loading certificate list...</div>
+    <div id="error" class="error" style="display: none;"></div>
+    <ul id="certificate-list"></ul>
+
+    <script>
+        // Function to generate QR code
+        function generateQRCode(text, canvas) {
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+
+            // Create a QR code
+            const qr = new QRious({
+                element: canvas,
+                value: text,
+                size: size,
+                backgroundAlpha: 1,
+                foreground: '#000000',
+                background: '#ffffff',
+                level: 'H', // Error correction level
+                padding: 10
+            });
+        }
+
+        // Function to generate QR code using QRious library
+        function generateQRCodeCanvas(text, container) {
+            // Create canvas element
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            canvas.className = 'qr-code';
+            container.appendChild(canvas);
+
+            // Generate QR code using QRious
+            new QRious({
+                element: canvas,
+                value: text,
+                size: 128,
+                backgroundAlpha: 1,
+                foreground: '#000000',
+                background: '#ffffff',
+                level: 'H', // Error correction level
+                padding: 10
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const listElement = document.getElementById('certificate-list');
+            const loadingElement = document.getElementById('loading');
+            const errorElement = document.getElementById('error');
+
+            // Fetch the keys from the API
+            fetch('/api/hkeys')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    loadingElement.style.display = 'none';
+
+                    if (!data.keys || !Array.isArray(data.keys) || data.keys.length === 0) {
+                        errorElement.textContent = 'No certificates found.';
+                        errorElement.style.display = 'block';
+                        return;
+                    }
+
+                    // Sort keys alphabetically
+                    data.keys.sort();
+
+                        // Create list items for each key
+                    data.keys.forEach(key => {
+                        const listItem = document.createElement('li');
+                        const itemContent = document.createElement('div');
+                        itemContent.style.display = 'flex';
+                        itemContent.style.alignItems = 'center';
+                        itemContent.style.justifyContent = 'space-between';
+                        
+                        const linkContainer = document.createElement('div');
+                        linkContainer.style.flex = '1';
+                        
+                        const link = document.createElement('a');
+                        const [CertificateNO, SampleNo] = key.split('_');
+
+                        // Create link to Service/GetReport with the key as parameter
+                        const reportUrl = window.location.origin + '/Service/GetReport?CertificateNO=' + encodeURIComponent(CertificateNO) + '&SampleNo=' + encodeURIComponent(SampleNo);
+                        link.href = reportUrl;
+                        link.textContent = CertificateNO + ' ' + SampleNo;
+                        
+                        // Create toggle button
+                        const toggleButton = document.createElement('button');
+                        toggleButton.textContent = 'Show Details';
+                        toggleButton.style.marginLeft = '10px';
+                        toggleButton.style.padding = '5px 10px';
+                        toggleButton.style.border = '1px solid #ddd';
+                        toggleButton.style.borderRadius = '4px';
+                        toggleButton.style.backgroundColor = '#f8f8f8';
+                        toggleButton.style.cursor = 'pointer';
+                        
+                        linkContainer.appendChild(link);
+                        linkContainer.appendChild(toggleButton);
+                        
+                        // Create details container (initially hidden)
+                        const detailsContainer = document.createElement('div');
+                        detailsContainer.style.display = 'none';
+                        detailsContainer.style.marginTop = '10px';
+                        detailsContainer.style.padding = '10px';
+                        detailsContainer.style.backgroundColor = '#f9f9f9';
+                        detailsContainer.style.borderRadius = '4px';
+                        detailsContainer.style.border = '1px solid #eee';
+                        
+                        // Create flex container for QR code and info
+                        const flexContainer = document.createElement('div');
+                        flexContainer.style.display = 'flex';
+                        flexContainer.style.flexWrap = 'wrap';
+                        
+                        // Create QR code container
+                        const qrContainer = document.createElement('div');
+                        qrContainer.className = 'qr-container';
+
+                        // Generate QR code for the URL
+                        generateQRCodeCanvas(reportUrl, qrContainer);
+                        
+                        // Create container for certificate info
+                        const infoContainer = document.createElement('div');
+                        infoContainer.className = 'certificate-info';
+                        infoContainer.style.flex = '1';
+                        infoContainer.style.minWidth = '300px';
+                        infoContainer.innerHTML = '<div class="loading-info">Loading certificate information...</div>';
+                        
+                        flexContainer.appendChild(qrContainer);
+                        flexContainer.appendChild(infoContainer);
+                        detailsContainer.appendChild(flexContainer);
+                        
+                        // Toggle details visibility
+                        let detailsLoaded = false;
+                        toggleButton.addEventListener('click', function() {
+                            const isVisible = detailsContainer.style.display !== 'none';
+                            detailsContainer.style.display = isVisible ? 'none' : 'block';
+                            toggleButton.textContent = isVisible ? 'Show Details' : 'Hide Details';
+                            
+                            // Load data if not already loaded
+                            if (!detailsLoaded && !isVisible) {
+                                fetch(`/api/get?key=${key}`)
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            throw new Error('Network response was not ok');
+                                        }
+                                        return response.json();
+                                    })
+                                    .then(data => {
+                                        data = data.data || {}
+                                        console.log(data)
+
+                                        // Clear loading message
+                                        infoContainer.innerHTML = '';
+
+                                        // Display certificate information
+                                        if (data && typeof data === 'string') {
+                                            data = JSON.parse(data)
+                                        }
+                                        if (data && typeof data === 'object') {
+                                            // Extract important fields
+                                            const fields = [];
+                                            // list all fields
+                                            for (const [key, value] of Object.entries(data)) {
+                                                fields.push({ label: key, value: value });
+                                            }
+
+                                            // Create info elements
+                                            fields.forEach(field => {
+                                                if (!field.label) {
+                                                    return;
+                                                }
+                                                const p = document.createElement('p');
+                                                if (field.label === 'fileUrl') {
+                                                    p.innerHTML = `<a href="${field.value}" target="_blank">原始pdf</a>`;
+                                                } else if (field.label === 'pdfFileName') {
+                                                    url = window.location.origin + '/ReportFiles/' + field.value;
+                                                    p.innerHTML = `<a href="${url}" target="_blank">替换后: ${field.value}</a>`;
+                                                } else {
+                                                    p.innerHTML = `<span class="label">${field.label}:</span> ${field.value}`;
+                                                }
+                                                infoContainer.appendChild(p);
+                                            });
+                                            detailsLoaded = true;
+                                        } else {
+                                            infoContainer.innerHTML = '<p>No certificate information available</p>';
+                                        }
+                                    })
+                                    .catch(error => {
+                                        infoContainer.innerHTML = `<p>Error loading certificate info: ${error.message}</p>`;
+                                        console.error('Error fetching certificate info:', error);
+                                    });
+                            }
+                        });
+
+                        itemContent.appendChild(linkContainer);
+                        listItem.appendChild(itemContent);
+                        listItem.appendChild(detailsContainer);
+                        listElement.appendChild(listItem);
+                    });
+                })
+                .catch(error => {
+                    loadingElement.style.display = 'none';
+                    errorElement.textContent = `Error fetching certificate list: ${error.message}`;
+                    errorElement.style.display = 'block';
+                    console.error('Error fetching certificate list:', error);
+                });
+        });
+    </script>
+</body>
+
+</html>
