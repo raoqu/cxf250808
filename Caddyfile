@@ -11,7 +11,7 @@
         Referrer-Policy "strict-origin-when-cross-origin"
         
         # Content Security Policy to allow scripts, styles, and API connections
-        Content-Security-Policy "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src 'self'"
+        Content-Security-Policy "default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src 'self'"
 
         # Enable CORS for local development
         Access-Control-Allow-Origin "*"

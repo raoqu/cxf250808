@@ -57,10 +57,10 @@
                 </div>
 
             </div>
-            <div class="param-actions">
+            <!-- <div class="param-actions">
                 <button id="clear-params-btn" class="secondary-btn">Clear</button>
                 <button id="copy-params-btn" class="secondary-btn">Copy Values</button>
-            </div>
+            </div> -->
 
             <div id="form-data-container" class="form-data-container"></div>
             <div class="form-data-content always-visible">
@@ -731,7 +731,7 @@
             }
 
             // Clear parameters button functionality
-            clearParamsBtn.addEventListener('click', function () {
+            clearParamsBtn && clearParamsBtn.addEventListener('click', function () {
                 clearForm();
             });
 
