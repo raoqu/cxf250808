@@ -114,6 +114,21 @@
             border-left: 3px solid #0066cc;
             font-weight: bold;
         }
+        
+        .toggle-all-btn {
+            padding: 8px 16px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        
+        .toggle-all-btn:hover {
+            background-color: #0055aa;
+        }
     </style>
 </head>
 
@@ -122,6 +137,9 @@
     <div id="loading" class="loading">Loading certificate list...</div>
     <div id="error" class="error" style="display: none;"></div>
     <div id="count-display" class="count-display" style="display: none;">总记录数: <span id="item-count">0</span></div>
+    <div id="controls" style="margin: 15px 0; display: none;">
+        <button id="toggle-all-btn" class="toggle-all-btn">展开全部</button>
+    </div>
     <ul id="certificate-list"></ul>
 
     <script>
@@ -169,6 +187,13 @@
             const listElement = document.getElementById('certificate-list');
             const loadingElement = document.getElementById('loading');
             const errorElement = document.getElementById('error');
+            const toggleAllBtn = document.getElementById('toggle-all-btn');
+            const controlsDiv = document.getElementById('controls');
+            
+            // Track all toggle buttons and detail containers
+            const allToggleButtons = [];
+            const allDetailContainers = [];
+            let allExpanded = false;
 
             // Fetch the keys from the API
             fetch('/api/hkeys')
@@ -192,6 +217,9 @@
                     const itemCount = document.getElementById('item-count');
                     itemCount.textContent = data.keys.length;
                     countDisplay.style.display = 'block';
+                    
+                    // Show controls when we have certificates
+                    controlsDiv.style.display = 'block';
 
                     // Sort keys alphabetically
                     data.keys.sort();
@@ -214,6 +242,7 @@
                         const reportUrl = window.location.origin + '/Service/GetReport?CertificateNO=' + encodeURIComponent(CertificateNO) + '&SampleNo=' + encodeURIComponent(SampleNo);
                         link.href = reportUrl;
                         link.textContent = CertificateNO + ' ' + SampleNo;
+                        link.target = '_blank';
                         
                         // Create toggle button
                         const toggleButton = document.createElement('button');
@@ -236,6 +265,10 @@
                         detailsContainer.style.backgroundColor = '#f9f9f9';
                         detailsContainer.style.borderRadius = '4px';
                         detailsContainer.style.border = '1px solid #eee';
+                        
+                        // Track all toggle buttons and detail containers for expand/collapse all functionality
+                        allToggleButtons.push(toggleButton);
+                        allDetailContainers.push(detailsContainer);
                         
                         // Create flex container for QR code and info
                         const flexContainer = document.createElement('div');
@@ -335,6 +368,95 @@
                     errorElement.style.display = 'block';
                     console.error('Error fetching certificate list:', error);
                 });
+                
+            // Add event listener for toggle all button
+            toggleAllBtn.addEventListener('click', function() {
+                // Toggle the state
+                allExpanded = !allExpanded;
+                
+                // Update button text
+                toggleAllBtn.textContent = allExpanded ? '收起全部' : '展开全部';
+                
+                // Toggle all detail containers
+                allDetailContainers.forEach((container, index) => {
+                    const toggleBtn = allToggleButtons[index];
+                    const isCurrentlyVisible = container.style.display !== 'none';
+                    
+                    // Only toggle if the current state doesn't match the desired state
+                    if (isCurrentlyVisible !== allExpanded) {
+                        container.style.display = allExpanded ? 'block' : 'none';
+                        toggleBtn.textContent = allExpanded ? 'Hide Details' : 'Show Details';
+                        
+                        // If we're expanding and details aren't loaded yet, trigger the data loading
+                        if (allExpanded && !isCurrentlyVisible) {
+                            // Get the key from the list item
+                            const listItem = container.parentNode;
+                            const linkElement = listItem.querySelector('a');
+                            if (linkElement) {
+                                const text = linkElement.textContent;
+                                const [CertificateNO, SampleNo] = text.split(' ');
+                                const key = CertificateNO + '_' + SampleNo;
+                                
+                                // Find the info container
+                                const infoContainer = container.querySelector('.certificate-info');
+                                if (infoContainer) {
+                                    // Load data directly instead of simulating click
+                                    fetch(`/api/get?key=${key}`)
+                                        .then(response => {
+                                            if (!response.ok) {
+                                                throw new Error('Network response was not ok');
+                                            }
+                                            return response.json();
+                                        })
+                                        .then(data => {
+                                            data = data.data || {}
+                                            console.log(data)
+
+                                            // Clear loading message
+                                            infoContainer.innerHTML = '';
+
+                                            // Display certificate information
+                                            if (data && typeof data === 'string') {
+                                                data = JSON.parse(data)
+                                            }
+                                            if (data && typeof data === 'object') {
+                                                // Extract important fields
+                                                const fields = [];
+                                                // list all fields
+                                                for (const [key, value] of Object.entries(data)) {
+                                                    fields.push({ label: key, value: value });
+                                                }
+
+                                                // Create info elements
+                                                fields.forEach(field => {
+                                                    if (!field.label) {
+                                                        return;
+                                                    }
+                                                    const p = document.createElement('p');
+                                                    if (field.label === 'fileUrl') {
+                                                        p.innerHTML = `<a href="${field.value}" target="_blank">原始pdf</a>`;
+                                                    } else if (field.label === 'pdfFileName') {
+                                                        url = window.location.origin + '/ReportFiles/' + field.value;
+                                                        p.innerHTML = `<a href="${url}" target="_blank">替换后: ${field.value}</a>`;
+                                                    } else {
+                                                        p.innerHTML = `<span class="label">${field.label}:</span> ${field.value}`;
+                                                    }
+                                                    infoContainer.appendChild(p);
+                                                });
+                                            } else {
+                                                infoContainer.innerHTML = '<p>No certificate information available</p>';
+                                            }
+                                        })
+                                        .catch(error => {
+                                            infoContainer.innerHTML = `<p>Error loading certificate info: ${error.message}</p>`;
+                                            console.error('Error fetching certificate info:', error);
+                                        });
+                                }
+                            }
+                        }
+                    }
+                });
+            });
         });
     </script>
 </body>
